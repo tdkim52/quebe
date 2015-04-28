@@ -103,14 +103,7 @@ class Player(pygame.sprite.Sprite):
 
     def stop(self): # key up
         self.change_x = 0
-
-class Scene(object):
-    def __init__(self, player):
-        self.background = None
-        self.world_shift = 0
-        self.platformList = pygame.sprite.Group()
-        self.enemyList = pygame.sprite.Group()
-        self.player = player
+        self.change_y = 0
 
 class Level(object):    # superclass for level creation
     def __init__(self, player):
@@ -171,12 +164,11 @@ class Level_01(Level):
         self.background = pygame.image.load('assets/background_blue.jpg').convert()
         self.background.set_colorkey(WHITE)
 
-        self.level_limit = -100
+        self.level_limitX = -100
+        self.level_limitY = -300
 
         self.startX = 125
         self.startY = 100
-        #self.player.rect.x = 125
-        #self.player.rect.y = 100
 
         # [length, height, x, y]
         level = [[600, 70, 100, 400],
@@ -198,7 +190,6 @@ class Level_01(Level):
             warper.player = self.player
             self.doorList.add(warper)
 
-
 class Level_02(Level):
     def __init__(self, player):
         Level.__init__(self, player)
@@ -206,7 +197,8 @@ class Level_02(Level):
         self.background = pygame.image.load('assets/background_blue.jpg').convert()
         self.background.set_colorkey(WHITE)
 
-        self.level_limit = -100
+        self.level_limitX = -100
+        self.level_limitY = -300
 
         self.startX = 125
         self.startY = 300
@@ -239,7 +231,8 @@ class Level_03(Level):
         self.background = pygame.image.load('assets/background_blue.jpg').convert()
         self.background.set_colorkey(WHITE)
 
-        self.level_limit = -100
+        self.level_limitX = -900
+        self.level_limitY = -300
 
         self.startX = 125
         self.startY = 300
@@ -273,7 +266,8 @@ class Level_04(Level):
         self.background = pygame.image.load('assets/background_blue.jpg').convert()
         self.background.set_colorkey(WHITE)
 
-        self.level_limit = -100
+        self.level_limitX = -100
+        self.level_limitY = -300
 
         self.startX = 125
         self.startY = 300
@@ -310,7 +304,7 @@ def main():
 
     size = [SCREEN_WIDTH, SCREEN_HEIGHT]
     screen = pygame.display.set_mode(size)
-    pygame.display.set_caption("test")
+    pygame.display.set_caption("Quebe")
 
     player = Player()
 
@@ -343,7 +337,7 @@ def main():
         player.stop()
         current_level.shiftWorldX(-current_level.world_shiftX)
         current_level.shiftWorldY(-current_level.world_shiftY)
-        player.level = current_level
+        #player.level = current_level
         player.rect.x = current_level.startX
         player.rect.y = current_level.startY
 
@@ -425,18 +419,13 @@ def main():
             player.rect.bottom = 500
             current_level.shiftWorldY(-diff)
 
-        # end of current level boundary
-        current_position = player.rect.x + current_level.world_shiftX
-        if current_position < current_level.level_limit:
-            if current_level_num < len(level_list)-1:
-                player.stop()
-                current_level.shiftWorldX(-current_level.world_shiftX)
-                player.level = current_level
-                player.rect.x = current_level.startX
-                player.rect.y = current_level.startY
-            else:   # out of levels
-                done = True
-
+        # end of current level boundaries
+        current_positionX = player.rect.x + current_level.world_shiftX
+        current_positionY = player.rect.y + current_level.world_shiftY
+        if current_positionX < current_level.level_limitX:
+            restart()
+        if current_positionY < current_level.level_limitY:
+            restart()
 
 
         # all drawing BELOW
