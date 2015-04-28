@@ -265,7 +265,7 @@ class Level_03(Level):
             warper.rect.y = door[3]
             warper.player = self.player
             self.doorList.add(warper)
-            
+
 class Level_04(Level):
     def __init__(self, player):
         Level.__init__(self, player)
