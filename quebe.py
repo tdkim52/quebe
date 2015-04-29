@@ -20,6 +20,7 @@ BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
+PINK = (255, 115, 115)
 
 class Platform(pygame.sprite.Sprite):
     def __init__(self, width, height):  # constructor
@@ -36,6 +37,13 @@ class Warp(pygame.sprite.Sprite):
         self.image = pygame.Surface([width, height])
         self.image.fill(WHITE)
         self.rect = self.image.get_rect()
+
+class Enemy(pygame.sprite.Sprite):
+    def __init__(self, width, height):
+        super(Enemy, self).__init__()
+        self.image = pygame.Surface([width, height])
+        self.image.set_colorkey(BLACK)
+        self.rect = pygame.draw.polygon(self.image, PINK, [[(width/2), 0], [0, height], [width, height]], 0)
 
 class Player(pygame.sprite.Sprite):
     def __init__(self):
@@ -123,7 +131,6 @@ class Player(pygame.sprite.Sprite):
         self.change_x = 0
         self.change_y = 0
 
-
 class Level(object):    # superclass for level creation
     def __init__(self, player):
         self.platformList = pygame.sprite.Group()
@@ -188,7 +195,7 @@ class Level_01(Level):
         self.level_limitY = -300
 
         self.startX = 125
-        self.startY = 100
+        self.startY = 125
 
         # [length, height, x, y]
         level = [[600, 70, 100, 400],
@@ -249,7 +256,7 @@ class Level_03(Level):
         Level.__init__(self, player)
 
         self.background = pygame.image.load('assets/backgrounds/blue.jpg').convert()
-        self.background.set_colorkey(WHITE)
+        self.background.set_colorkey(BLACK)
 
         self.level_limitX = -900
         self.level_limitY = -300
@@ -284,7 +291,7 @@ class Level_04(Level):
         Level.__init__(self, player)
 
         self.background = pygame.image.load('assets/backgrounds/blue.jpg').convert()
-        self.background.set_colorkey(WHITE)
+        self.background.set_colorkey(BLACK)
 
         self.level_limitX = -100
         self.level_limitY = -300
@@ -323,7 +330,7 @@ class Level_05(Level):
         Level.__init__(self, player)
 
         self.background = pygame.image.load('assets/backgrounds/blue.jpg').convert()
-        self.background.set_colorkey(WHITE)
+        self.background.set_colorkey(BLACK)
 
         self.level_limitX = -1000
         self.level_limitY = -300
@@ -332,18 +339,23 @@ class Level_05(Level):
         self.startY = 125
 
         # [length, height, x, y]
-        level = [[1000, 30, 50, 50],
+        level = [[1100, 30, 50, 50],
                  [250, 30, 50, 200],
                  [30, 150, 50, 50],
                  [30, 340, 250, 200],
                  [100, 10, 420, 200],
                  [120, 80, 500, 80],
                  [100, 10, 575, 200],
+
+                 [10, 20, 900, 300],
+                 [250, 160, 1100, 50],
+                 [300, 10, 1100, 250],
+
                  [40, 10, 250, 430],
                  [40, 10, 250, 320],
                  [125, 10, 250, 540]
                  ]
-        nextLvl = [[40, 60, 120, 125],
+        nextLvl = [[40, 60, 1360, 190],
                    ]
 
         for platform in level:
@@ -359,6 +371,56 @@ class Level_05(Level):
             warper.rect.y = door[3]
             warper.player = self.player
             self.doorList.add(warper)
+
+class Level_06(Level):
+    def __init__(self, player):
+        Level.__init__(self, player)
+
+        self.background = pygame.image.load('assets/backgrounds/blue.jpg').convert()
+        self.background.set_colorkey(BLACK)
+
+        self.level_limitX = -1000
+        self.level_limitY = -300
+
+        self.startX = 125
+        self.startY = 275
+
+        # [length, height, x, y]
+        level = [[1100, 30, 0, 400],
+                 ]
+
+        nextLvl = [[40, 60, 1050, 340],
+                   ]
+
+        enemies = [[35, 35, 400, 365],
+                   [35, 35, 450, 365],
+                   [35, 35, 500, 365],
+                   [35, 35, 600, 365],
+                   [35, 35, 800, 200],
+                   [35, 35, 800, 330],
+                   [35, 35, 800, 365],
+                   ]
+
+        for platform in level:
+            block = Platform(platform[0], platform[1])
+            block.rect.x = platform[2]
+            block.rect.y = platform[3]
+            block.player = self.player
+            self.platformList.add(block)
+
+        for door in nextLvl:
+            warper = Warp(door[0], door[1])
+            warper.rect.x = door[2]
+            warper.rect.y = door[3]
+            warper.player = self.player
+            self.doorList.add(warper)
+
+        for enemy in enemies:
+            bady = Enemy(enemy[0], enemy[1])
+            bady.rect.x = enemy[2]
+            bady.rect.y = enemy[3]
+            bady.player = self.player
+            self.enemyList.add(bady)
 
 def main():
 
@@ -378,6 +440,7 @@ def main():
     level_list.append(Level_03(player))
     level_list.append(Level_04(player))
     level_list.append(Level_05(player))
+    level_list.append(Level_06(player))
 
     current_level_num = 0
     current_level = level_list[current_level_num]
@@ -585,6 +648,11 @@ def main():
                     player.level = current_level
                     player.rect.x = current_level.startX
                     player.rect.y = current_level.startY
+
+            # checks collision from enemies
+            enemy_hit_list = pygame.sprite.spritecollide(player, player.level.enemyList, False)
+            for enemy in enemy_hit_list:
+                restart()
 
             # player near right, shift world left
             if player.rect.right >= 500:
