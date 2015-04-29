@@ -54,6 +54,9 @@ class Player(pygame.sprite.Sprite):
 
         self.level = None
 
+        self.jumpSound = pygame.mixer.Sound('assets/sounds/SFX_Jump_22.wav')
+        self.jumpSound.set_volume(0.5)
+
     def update(self):   # moves the player
         self.calcGrav()
 
@@ -93,6 +96,7 @@ class Player(pygame.sprite.Sprite):
         self.rect.y -= 2
 
         if len(platform_hit_list) > 0 or self.rect.bottom >= SCREEN_HEIGHT:
+            self.jumpSound.play()
             self.change_y = -10  # larger neg = stronger jump
 
     def goLeft(self):
@@ -300,6 +304,7 @@ class Level_04(Level):
 
 def main():
 
+    pygame.mixer.pre_init(44100, -16, 2, 1024)
     pygame.init()
     pygame.mixer.init()
 
@@ -325,10 +330,12 @@ def main():
     player.rect.y = current_level.startY    #SCREEN_HEIGHT - player.rect.height
     active_sprite_list.add(player)
 
-    pygame.mixer.music.load('assets/jhElegiac.ogg')
+    pygame.mixer.music.load('assets/music/jhElegiac.ogg')
     pygame.mixer.music.play(-1, 0.0)
-    pygame.mixer.music.set_volume(0.5)
+    pygame.mixer.music.set_volume(0.25)
     music = True
+
+    #jumpSound = pygame.mixer.Sound('assets/sounds/SFX_Jump_22.wav')
 
     #background_img = pygame.image.load('assets/background_blue.jpg').convert()
 
@@ -393,6 +400,7 @@ def main():
                 if event.key == pygame.K_RIGHT or event.key == pygame.K_d:
                     player.goRight()
                 if event.key == pygame.K_UP or event.key == pygame.K_SPACE:
+                    #jumpSound.play()
                     player.jump()
                 # restart level
                 if event.key == pygame.K_r:
