@@ -279,8 +279,9 @@ class Level_04(Level):
                  [80, 80, 340, 240],
                  [80, 80, 420, 160],
                  [80, 80, 500, 80],
+                 [100, 20, 340, 540]
                  ]
-        nextLvl = [[40, 60, 540, 20],
+        nextLvl = [[40, 60, 340, 480],
                    ]
 
         for platform in level:
@@ -324,12 +325,15 @@ def main():
     player.rect.y = current_level.startY    #SCREEN_HEIGHT - player.rect.height
     active_sprite_list.add(player)
 
-    #pygame.mixer.music.load('assets/jhElegiac.ogg')
-    #pygame.mixer.music.play(-1, 0.0)
+    pygame.mixer.music.load('assets/jhElegiac.ogg')
+    pygame.mixer.music.play(-1, 0.0)
+    pygame.mixer.music.set_volume(0.5)
+    music = True
 
     #background_img = pygame.image.load('assets/background_blue.jpg').convert()
 
     done = False
+    paused = False
 
     fpsClock = pygame.time.Clock()
 
@@ -341,16 +345,49 @@ def main():
         player.rect.x = current_level.startX
         player.rect.y = current_level.startY
 
-    while True:
+    def menu():
+        fontObjR = pygame.font.Font("assets/fonts/Raleway-Regular.ttf", 32)
+        fontObjQ = pygame.font.Font("assets/fonts/Raleway-Light.ttf", 20)
+        fontObjF1 = pygame.font.Font("assets/fonts/Raleway-Light.ttf", 20)
 
+        textSurfP = fontObjR.render("Paused", True, WHITE)
+        textRectP = textSurfP.get_rect()
+        textRectP.center = ((SCREEN_WIDTH/2), (SCREEN_HEIGHT/15))
+
+        textSurfQ = fontObjQ.render("Press 'q' to Quit", True, WHITE)
+        textRectQ = textSurfQ.get_rect()
+        textRectQ.left = ((SCREEN_WIDTH/15))
+
+        textSurfF1 = fontObjF1.render("Press 'F1' for Help", True, WHITE)
+        textRectF1 = textSurfF1.get_rect()
+        textRectF1.right = ((SCREEN_WIDTH/15)*14)
+
+        textSurfM = fontObjQ.render("Press 'm' to Toggle Music", True, WHITE)
+        textRectM = textSurfM.get_rect()
+        textRectM.bottomleft = ((SCREEN_WIDTH/15), ((SCREEN_HEIGHT/15)*14))
+
+        screen.blit(textSurfP, textRectP)
+        screen.blit(textSurfQ, textRectQ)
+        screen.blit(textSurfF1, textRectF1)
+        screen.blit(textSurfM, textRectM)
+
+        print(pygame.mixer.music.get_volume())
+        pygame.display.update()
+
+    while not done:
         for event in pygame.event.get():
             if event.type == QUIT:
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    pygame.quit()
-                    sys.exit()
+                    if paused == False:
+                        paused = True
+                        menu()
+                    elif paused == True:
+                        paused = False
+                    #pygame.quit()
+                    #sys.exit()
                 if event.key == pygame.K_LEFT or event.key == pygame.K_a:
                     player.goLeft()
                 if event.key == pygame.K_RIGHT or event.key == pygame.K_d:
@@ -360,6 +397,19 @@ def main():
                 # restart level
                 if event.key == pygame.K_r:
                     restart()
+                if paused == True:
+                    if event.key == pygame.K_q:
+                        pygame.quit()
+                        sys.exit()
+                    if event.key == pygame.K_F1:
+                        print("in-game help screen")
+                if event.key == pygame.K_m:
+                    if music == True:
+                        pygame.mixer.music.pause()
+                        music = False
+                    else:
+                        pygame.mixer.music.unpause()
+                        music = True
 
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_LEFT and player.change_x < 0:
@@ -380,62 +430,61 @@ def main():
                         player.rect.x = current_level.startX
                         player.rect.y = current_level.startY
 
-        active_sprite_list.update()
+        if paused == False:
+            active_sprite_list.update()
+            current_level.update()
 
-        current_level.update()
+            # checks if warp door has been reached
+            door_hit_list = pygame.sprite.spritecollide(player, player.level.doorList, False)
+            for door in door_hit_list:
+                if current_level_num < len(level_list)-1:
+                    player.stop()
+                    current_level_num += 1
+                    current_level = level_list[current_level_num]
+                    player.level = current_level
+                    player.rect.x = current_level.startX
+                    player.rect.y = current_level.startY
 
-        # checks if warp door has been reached
-        door_hit_list = pygame.sprite.spritecollide(player, player.level.doorList, False)
-        for door in door_hit_list:
-            if current_level_num < len(level_list)-1:
-                player.stop()
-                current_level_num += 1
-                current_level = level_list[current_level_num]
-                player.level = current_level
-                player.rect.x = current_level.startX
-                player.rect.y = current_level.startY
+            # player near right, shift world left
+            if player.rect.right >= 500:
+                diff = player.rect.right - 500
+                player.rect.right = 500
+                current_level.shiftWorldX(-diff)
 
-        # player near right, shift world left
-        if player.rect.right >= 500:
-            diff = player.rect.right - 500
-            player.rect.right = 500
-            current_level.shiftWorldX(-diff)
+            # player near left, shift world right
+            if player.rect.left <= 120:
+                diff = 120 - player.rect.left
+                player.rect.left = 120
+                current_level.shiftWorldX(diff)
 
-        # player near left, shift world right
-        if player.rect.left <= 120:
-            diff = 120 - player.rect.left
-            player.rect.left = 120
-            current_level.shiftWorldX(diff)
+            # player near top, shift world down
+            if player.rect.top <= 120:
+                diff = 120 - player.rect.top
+                player.rect.top = 120
+                current_level.shiftWorldY(diff)
 
-        # player near top, shift world down
-        if player.rect.top <= 120:
-            diff = 120 - player.rect.top
-            player.rect.top = 120
-            current_level.shiftWorldY(diff)
+            #player near bot, shift world up
+            if player.rect.bottom >= 500:
+                diff = player.rect.bottom - 500
+                player.rect.bottom = 500
+                current_level.shiftWorldY(-diff)
 
-        #player near bot, shift world up
-        if player.rect.bottom >= 500:
-            diff = player.rect.bottom - 500
-            player.rect.bottom = 500
-            current_level.shiftWorldY(-diff)
+            # end of current level boundaries
+            current_positionX = player.rect.x + current_level.world_shiftX
+            current_positionY = player.rect.y + current_level.world_shiftY
+            if current_positionX < current_level.level_limitX:
+                restart()
+            if current_positionY < current_level.level_limitY:
+                restart()
 
-        # end of current level boundaries
-        current_positionX = player.rect.x + current_level.world_shiftX
-        current_positionY = player.rect.y + current_level.world_shiftY
-        if current_positionX < current_level.level_limitX:
-            restart()
-        if current_positionY < current_level.level_limitY:
-            restart()
+            # all drawing BELOW
+            current_level.draw(screen)
+            active_sprite_list.draw(screen)
+            # all drawing ABOVE
 
+            fpsClock.tick(FPS)
 
-        # all drawing BELOW
-        current_level.draw(screen)
-        active_sprite_list.draw(screen)
-        # all drawing ABOVE
-
-        fpsClock.tick(FPS)
-
-        pygame.display.update()
+            pygame.display.update()
 
     pygame.quit()
 
