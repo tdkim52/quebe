@@ -57,6 +57,14 @@ class Player(pygame.sprite.Sprite):
         self.jumpSound = pygame.mixer.Sound('assets/sounds/SFX_Jump_22.wav')
         self.jumpSound.set_volume(0.5)
 
+    # def rotate(image, angle):
+    #     orig_rect = image.get_rect()
+    #     rot_image = pygame.transform.rotate(image, angle)
+    #     rot_rect = orig_rect.copy()
+    #     rot_rect.center = rot_image.get_rect().center
+    #     rot_image = rot_image.subsurface(rot_rect).copy()
+    #     return rot_image
+
     def update(self):   # moves the player
         self.calcGrav()
 
@@ -105,9 +113,16 @@ class Player(pygame.sprite.Sprite):
     def goRight(self):
         self.change_x = 6
 
+    def goUp(self):
+        self.change_y = -6
+
+    def goDown(self):
+        self.change_y = 6
+
     def stop(self): # key up
         self.change_x = 0
         self.change_y = 0
+
 
 class Level(object):    # superclass for level creation
     def __init__(self, player):
@@ -130,8 +145,9 @@ class Level(object):    # superclass for level creation
         self.doorList.update()
 
     def draw(self, screen):
-        #screen.fill(BLUE)
-        screen.blit(self.background, [0, 0])
+        #screen.fill(BLACK)
+        #screen.blit(self.background, [0, 0])
+        screen.blit(self.background, (self.world_shiftX // 3, self.world_shiftY // 3))
         self.platformList.draw(screen)
         self.enemyList.draw(screen)
         self.doorList.draw(screen)
@@ -165,8 +181,8 @@ class Level_01(Level):
         Level.__init__(self, player)
 
         #self.background = pygame.image.load('assets/background_purple.jpg').convert()
-        self.background = pygame.image.load('assets/background_blue.jpg').convert()
-        self.background.set_colorkey(WHITE)
+        self.background = pygame.image.load('assets/backgrounds/bluelvl1.png').convert()
+        self.background.set_colorkey(BLACK)
 
         self.level_limitX = -100
         self.level_limitY = -300
@@ -198,8 +214,8 @@ class Level_02(Level):
     def __init__(self, player):
         Level.__init__(self, player)
 
-        self.background = pygame.image.load('assets/background_blue.jpg').convert()
-        self.background.set_colorkey(WHITE)
+        self.background = pygame.image.load('assets/backgrounds/bluelvl2.png').convert()
+        self.background.set_colorkey(BLACK)
 
         self.level_limitX = -100
         self.level_limitY = -300
@@ -232,7 +248,7 @@ class Level_03(Level):
     def __init__(self, player):
         Level.__init__(self, player)
 
-        self.background = pygame.image.load('assets/background_blue.jpg').convert()
+        self.background = pygame.image.load('assets/backgrounds/blue.jpg').convert()
         self.background.set_colorkey(WHITE)
 
         self.level_limitX = -900
@@ -267,7 +283,7 @@ class Level_04(Level):
     def __init__(self, player):
         Level.__init__(self, player)
 
-        self.background = pygame.image.load('assets/background_blue.jpg').convert()
+        self.background = pygame.image.load('assets/backgrounds/blue.jpg').convert()
         self.background.set_colorkey(WHITE)
 
         self.level_limitX = -100
@@ -302,6 +318,48 @@ class Level_04(Level):
             warper.player = self.player
             self.doorList.add(warper)
 
+class Level_05(Level):
+    def __init__(self, player):
+        Level.__init__(self, player)
+
+        self.background = pygame.image.load('assets/backgrounds/blue.jpg').convert()
+        self.background.set_colorkey(WHITE)
+
+        self.level_limitX = -1000
+        self.level_limitY = -300
+
+        self.startX = 125
+        self.startY = 125
+
+        # [length, height, x, y]
+        level = [[1000, 30, 50, 50],
+                 [250, 30, 50, 200],
+                 [30, 150, 50, 50],
+                 [30, 340, 250, 200],
+                 [100, 10, 420, 200],
+                 [120, 80, 500, 80],
+                 [100, 10, 575, 200],
+                 [40, 10, 250, 430],
+                 [40, 10, 250, 320],
+                 [125, 10, 250, 540]
+                 ]
+        nextLvl = [[40, 60, 120, 125],
+                   ]
+
+        for platform in level:
+            block = Platform(platform[0], platform[1])
+            block.rect.x = platform[2]
+            block.rect.y = platform[3]
+            block.player = self.player
+            self.platformList.add(block)
+
+        for door in nextLvl:
+            warper = Warp(door[0], door[1])
+            warper.rect.x = door[2]
+            warper.rect.y = door[3]
+            warper.player = self.player
+            self.doorList.add(warper)
+
 def main():
 
     pygame.mixer.pre_init(44100, -16, 2, 1024)
@@ -319,6 +377,7 @@ def main():
     level_list.append(Level_02(player))
     level_list.append(Level_03(player))
     level_list.append(Level_04(player))
+    level_list.append(Level_05(player))
 
     current_level_num = 0
     current_level = level_list[current_level_num]
@@ -342,6 +401,8 @@ def main():
     done = False
     paused = False
 
+    grav = True
+
     fpsClock = pygame.time.Clock()
 
     def restart():
@@ -354,22 +415,21 @@ def main():
 
     def menu():
         fontObjR = pygame.font.Font("assets/fonts/Raleway-Regular.ttf", 32)
-        fontObjQ = pygame.font.Font("assets/fonts/Raleway-Light.ttf", 20)
-        fontObjF1 = pygame.font.Font("assets/fonts/Raleway-Light.ttf", 20)
+        fontObjL = pygame.font.Font("assets/fonts/Raleway-Light.ttf", 20)
 
         textSurfP = fontObjR.render("Paused", True, WHITE)
         textRectP = textSurfP.get_rect()
         textRectP.center = ((SCREEN_WIDTH/2), (SCREEN_HEIGHT/15))
 
-        textSurfQ = fontObjQ.render("Press 'q' to Quit", True, WHITE)
+        textSurfQ = fontObjL.render("Press 'q' to Quit", True, WHITE)
         textRectQ = textSurfQ.get_rect()
         textRectQ.left = ((SCREEN_WIDTH/15))
 
-        textSurfF1 = fontObjF1.render("Press 'F1' for Help", True, WHITE)
+        textSurfF1 = fontObjL.render("Press 'F1' for Help", True, WHITE)
         textRectF1 = textSurfF1.get_rect()
         textRectF1.right = ((SCREEN_WIDTH/15)*14)
 
-        textSurfM = fontObjQ.render("Press 'm' to Toggle Music", True, WHITE)
+        textSurfM = fontObjL.render("Press 'm' to Toggle Music", True, WHITE)
         textRectM = textSurfM.get_rect()
         textRectM.bottomleft = ((SCREEN_WIDTH/15), ((SCREEN_HEIGHT/15)*14))
 
@@ -379,6 +439,69 @@ def main():
         screen.blit(textSurfM, textRectM)
 
         print(pygame.mixer.music.get_volume())
+        pygame.display.update()
+
+    def help():
+        fontObjR = pygame.font.Font("assets/fonts/Raleway-Regular.ttf", 32)
+        fontObjL = pygame.font.Font("assets/fonts/Raleway-Light.ttf",20)
+
+        textSurf1 = fontObjR.render("Help", True, WHITE)
+        textRect1 = textSurf1.get_rect()
+        textRect1.center = ((SCREEN_WIDTH/2), (SCREEN_HEIGHT/15))
+
+        textSurf2 = fontObjL.render("You are Quebe. You must get to the White Door. What awaits at the end?",
+                                    True, WHITE)
+        textRect2 = textSurf2.get_rect()
+        textRect2.left = ((SCREEN_WIDTH/15))
+        textRect2.top = ((SCREEN_HEIGHT/20)*3)
+
+        textSurf3 = fontObjL.render("Move/Jump:     Arrow Keys or WASD", True, WHITE)
+        textRect3 = textSurf3.get_rect()
+        textRect3.left = ((SCREEN_WIDTH/15))
+        textRect3.top = ((SCREEN_HEIGHT/20)*5)
+
+        textSurf4 = fontObjL.render("Menu/Pause:    ESC", True, WHITE)
+        textRect4 = textSurf4.get_rect()
+        textRect4.left = ((SCREEN_WIDTH/15))
+        textRect4.top = ((SCREEN_HEIGHT/20)*6)
+
+        textSurf5 = fontObjL.render("Restart Level:     r", True, WHITE)
+        textRect5 = textSurf5.get_rect()
+        textRect5.left = ((SCREEN_WIDTH/15))
+        textRect5.top = ((SCREEN_HEIGHT/20)*7)
+
+        textSurf6 = fontObjL.render("Quit:                     q", True, WHITE)
+        textRect6 = textSurf6.get_rect()
+        textRect6.left = ((SCREEN_WIDTH/15))
+        textRect6.top = ((SCREEN_HEIGHT/20)*8)
+
+        textSurf7 = fontObjL.render("Toggle Music:    m", True, WHITE)
+        textRect7 = textSurf7.get_rect()
+        textRect7.left = ((SCREEN_WIDTH/15))
+        textRect7.top = ((SCREEN_HEIGHT/20)*9)
+
+        textSurf8 = fontObjL.render("Cheat - Skip to Next Level:         TAB", True, WHITE)
+        textRect8 = textSurf8.get_rect()
+        textRect8.left = ((SCREEN_WIDTH/15))
+        textRect8.top = ((SCREEN_HEIGHT/20)*11)
+
+        textSurf9 = fontObjL.render("Cheat - Toggle Jump Mode:       j", True, WHITE)
+        textRect9 = textSurf9.get_rect()
+        textRect9.left = ((SCREEN_WIDTH/15))
+        textRect9.top = ((SCREEN_HEIGHT/20)*12)
+
+        bckgnd = pygame.image.load('assets/backgrounds/purple800x600.jpg').convert()
+        screen.blit(bckgnd, [0, 0])
+        screen.blit(textSurf1, textRect1)
+        screen.blit(textSurf2, textRect2)
+        screen.blit(textSurf3, textRect3)
+        screen.blit(textSurf4, textRect4)
+        screen.blit(textSurf5, textRect5)
+        screen.blit(textSurf6, textRect6)
+        screen.blit(textSurf7, textRect7)
+        screen.blit(textSurf8, textRect8)
+        screen.blit(textSurf9, textRect9)
+
         pygame.display.update()
 
     while not done:
@@ -399,9 +522,14 @@ def main():
                     player.goLeft()
                 if event.key == pygame.K_RIGHT or event.key == pygame.K_d:
                     player.goRight()
-                if event.key == pygame.K_UP or event.key == pygame.K_SPACE:
-                    #jumpSound.play()
-                    player.jump()
+                if event.key == pygame.K_UP or event.key == pygame.K_w:
+                    if grav == True:
+                        player.jump()
+                    else:
+                        player.goUp()
+                if event.key == pygame.K_DOWN or event.key == pygame.K_s:
+                    if grav == False:
+                        player.goDown()
                 # restart level
                 if event.key == pygame.K_r:
                     restart()
@@ -410,7 +538,7 @@ def main():
                         pygame.quit()
                         sys.exit()
                     if event.key == pygame.K_F1:
-                        print("in-game help screen")
+                        help()
                 if event.key == pygame.K_m:
                     if music == True:
                         pygame.mixer.music.pause()
@@ -418,6 +546,11 @@ def main():
                     else:
                         pygame.mixer.music.unpause()
                         music = True
+                if event.key == pygame.K_j:
+                    if grav == True:
+                        grav = False
+                    else:
+                        grav = True
 
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_LEFT and player.change_x < 0:
