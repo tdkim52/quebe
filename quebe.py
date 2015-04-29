@@ -38,12 +38,19 @@ class Warp(pygame.sprite.Sprite):
         self.image.fill(WHITE)
         self.rect = self.image.get_rect()
 
-class Enemy(pygame.sprite.Sprite):
+class EnemyTri(pygame.sprite.Sprite):
     def __init__(self, width, height):
-        super(Enemy, self).__init__()
+        super(EnemyTri, self).__init__()
         self.image = pygame.Surface([width, height])
         self.image.set_colorkey(BLACK)
         self.rect = pygame.draw.polygon(self.image, PINK, [[(width/2), 0], [0, height], [width, height]], 0)
+
+class EnemyPlat(pygame.sprite.Sprite):
+    def __init__(self, width, height):
+        super(EnemyPlat, self).__init__()
+        self.image = pygame.Surface([width, height])
+        self.image.fill(PINK)
+        self.rect = self.image.get_rect()
 
 class Player(pygame.sprite.Sprite):
     def __init__(self):
@@ -416,7 +423,144 @@ class Level_06(Level):
             self.doorList.add(warper)
 
         for enemy in enemies:
-            bady = Enemy(enemy[0], enemy[1])
+            bady = EnemyTri(enemy[0], enemy[1])
+            bady.rect.x = enemy[2]
+            bady.rect.y = enemy[3]
+            bady.player = self.player
+            self.enemyList.add(bady)
+
+class Level_07(Level):
+    def __init__(self, player):
+        Level.__init__(self, player)
+
+        self.background = pygame.image.load('assets/backgrounds/bluebluepurple1080.png').convert()
+        self.background.set_colorkey(BLACK)
+
+        self.level_limitX = -1000
+        self.level_limitY = -10000
+
+        self.startX = 125
+        self.startY = 125
+
+        # [length, height, x, y]
+        level = [[640, 35, 10, 200],
+                 [35, 190, 10, 10],
+                 [750, 35, 10, 10],
+
+                 [35, 35, 760, 20],
+                 [35, 35, 795, 30],
+                 [35, 35, 830, 40],
+                 [35, 35, 865, 50],
+                 [35, 1000, 865, 85],
+
+                 [35, 885, 650, 200],
+
+                 [250, 35, 650, 6800],
+                 ]
+
+        nextLvl = [[35, 60, 760, 6740],
+                   ]
+
+        triangles = [[35, 35, 760, 200],
+                     [35, 35, 760, 235],
+                     [35, 35, 760, 270],
+                     [35, 35, 760, 800],
+                     [35, 35, 760, 1000],
+                     [35, 35, 760, 1500],
+                     [35, 35, 760, 1600],
+                     [35, 35, 760, 1700],
+                     [35, 35, 760, 1800],
+                     [35, 35, 760, 1900],
+                     [35, 35, 760, 2000],
+                     [35, 35, 760, 2100],
+                     [35, 35, 760, 2200],
+                     [35, 35, 760, 2300],
+                     [35, 35, 760, 3500],
+                     [35, 35, 700, 6765],
+
+                     [35, 35, 685, 500],
+                     [35, 35, 830, 700],
+                   ]
+
+        deathWall = [[35, 2000, 650, 1085],
+                     [35, 450, 760, 3535],
+                     [35, 2000, 865, 1085],
+
+
+                     [35, 3715, 650, 3085],
+                     [35, 2755, 760, 3985],
+                     [35, 3715, 865, 3085],
+                     ]
+
+        for platform in level:
+            block = Platform(platform[0], platform[1])
+            block.rect.x = platform[2]
+            block.rect.y = platform[3]
+            block.player = self.player
+            self.platformList.add(block)
+
+        for door in nextLvl:
+            warper = Warp(door[0], door[1])
+            warper.rect.x = door[2]
+            warper.rect.y = door[3]
+            warper.player = self.player
+            self.doorList.add(warper)
+
+        for tri in triangles:
+            bady = EnemyTri(tri[0], tri[1])
+            bady.rect.x = tri[2]
+            bady.rect.y = tri[3]
+            bady.player = self.player
+            self.enemyList.add(bady)
+
+        for wall in deathWall:
+            bady = EnemyPlat(wall[0], wall[1])
+            bady.rect.x = wall[2]
+            bady.rect.y = wall[3]
+            bady.player = self.player
+            self.enemyList.add(bady)
+
+class Level_08(Level):
+    def __init__(self, player):
+        Level.__init__(self, player)
+
+        self.background = pygame.image.load('assets/backgrounds/purplefinal.png').convert()
+        self.background.set_colorkey(BLACK)
+
+        self.level_limitX = -100
+        self.level_limitY = -100
+
+        self.startX = 140
+        self.startY = 200
+
+        # [length, height, x, y]
+        level = [[550, 30, 125, 400],
+                 ]
+
+        nextLvl = [[40, 60, 400, 340],
+                   ]
+
+        enemies = [[35, 35, 365, 365],
+                   [35, 35, 440, 365],
+                   [35, 35, 402.5, 304],
+                   ]
+
+        for platform in level:
+            block = Platform(platform[0], platform[1])
+            block.rect.x = platform[2]
+            block.rect.y = platform[3]
+            block.player = self.player
+            self.platformList.add(block)
+
+        for door in nextLvl:
+            warper = Warp(door[0], door[1])
+            warper.rect.x = door[2]
+            warper.rect.y = door[3]
+            warper.player = self.player
+            self.doorList.add(warper)
+
+        for enemy in enemies:
+            bady = EnemyTri(enemy[0], enemy[1])
             bady.rect.x = enemy[2]
             bady.rect.y = enemy[3]
             bady.player = self.player
@@ -441,6 +585,8 @@ def main():
     level_list.append(Level_04(player))
     level_list.append(Level_05(player))
     level_list.append(Level_06(player))
+    level_list.append(Level_07(player))
+    level_list.append(Level_08(player))
 
     current_level_num = 0
     current_level = level_list[current_level_num]
