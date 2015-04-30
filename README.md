@@ -9,7 +9,7 @@ Requires Python v2.7, Pygame
 
 Controls
 
-		Move/Jump: Arrow Keys $|$ WASD
+		Move/Jump: Arrow Keys | WASD
 		Menu/Pause: ESC
 			Quit: q
 			Help: F1
@@ -17,6 +17,7 @@ Controls
 		Toggle Music: m
 
 Cheats
+
 		Skip to Next Level: Tab
 		Toggle Jump Mode : j
 			allows for continued jumps while airborne
