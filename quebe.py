@@ -2,16 +2,30 @@ __author__ = 'TDK'
 
 #
 # Timothy Kim
+# W01011895
+# April 29, 2015
 #
 # Quebe platform game
 #
+# references taken from texts:
+# inventwithpython.com/makinggames.pdf
+# programarcadegames.com
+# pygame.org/docs
+#
+# Further documentation included in
+# Quebe - Game Manual.pdf
+#
+#
+# Release v0.1 - April 29, 2015
 #
 
+# requires pygame module to be installed
 import pygame
 import sys
 
 from pygame.locals import *
 
+# global constants
 FPS = 60
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
@@ -22,15 +36,16 @@ GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 PINK = (255, 115, 115)
 
+# normal grey platforms/walls
 class Platform(pygame.sprite.Sprite):
-    def __init__(self, width, height):  # constructor
+    # constructor
+    def __init__(self, width, height):
         super(Platform, self).__init__()
-
         self.image = pygame.Surface([width, height])
         self.image.fill(GREY)
-
         self.rect = self.image.get_rect()
 
+# White Door warp
 class Warp(pygame.sprite.Sprite):
     def __init__(self, width, height):
         super(Warp, self).__init__()
@@ -38,6 +53,7 @@ class Warp(pygame.sprite.Sprite):
         self.image.fill(WHITE)
         self.rect = self.image.get_rect()
 
+# pink enemy triangles, equilateral
 class EnemyTri(pygame.sprite.Sprite):
     def __init__(self, width, height):
         super(EnemyTri, self).__init__()
@@ -45,6 +61,7 @@ class EnemyTri(pygame.sprite.Sprite):
         self.image.set_colorkey(BLACK)
         self.rect = pygame.draw.polygon(self.image, PINK, [[(width/2), 0], [0, height], [width, height]], 0)
 
+# pink platforms/walls, death on contact
 class EnemyPlat(pygame.sprite.Sprite):
     def __init__(self, width, height):
         super(EnemyPlat, self).__init__()
@@ -52,30 +69,34 @@ class EnemyPlat(pygame.sprite.Sprite):
         self.image.fill(PINK)
         self.rect = self.image.get_rect()
 
+# user controlled Player black square
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         super(Player, self).__init__()
 
+        # create square
         width = 35
-        #height = 60
         height = 35
         self.image = pygame.Surface([width, height])
         self.image.fill(BLACK)
-
         self.rect = self.image.get_rect()
 
+        # current speed
         self.change_x = 0
         self.change_y = 0
 
+        # current level
         self.level = None
 
+        # jump sound effect
         self.jumpSound = pygame.mixer.Sound('assets/sounds/SFX_Jump_22.wav')
         self.jumpSound.set_volume(0.5)
 
-    def update(self):   # moves the player
+    # handles movement of player
+    def update(self):
         self.calcGrav()
 
-        # move left/right with collision detection
+        # move left/right with collision detection of platforms
         self.rect.x += self.change_x
         block_hit_list = pygame.sprite.spritecollide(self, self.level.platformList, False)
         for block in block_hit_list:
@@ -84,7 +105,7 @@ class Player(pygame.sprite.Sprite):
             elif self.change_x < 0:
                 self.rect.left = block.rect.right
 
-        # move up/down with collision detection
+        # move up/down with collision detection of platforms
         self.rect.y += self.change_y
         block_hit_list = pygame.sprite.spritecollide(self, self.level.platformList, False)
         for block in block_hit_list:
@@ -94,82 +115,87 @@ class Player(pygame.sprite.Sprite):
                 self.rect.top = block.rect.bottom
             self.change_y = 0
 
+    # changes current speed location on y axis
     def calcGrav(self):
         if self.change_y == 0:
             self.change_y = 1
         else:
             self.change_y += .40    # rate of acceleration, greater = more
-
+        # not on screen floor
         if self.rect.y >= SCREEN_HEIGHT - self.rect.height and self.change_y >= 0:
             self.change_y = 0
             self.rect.y = SCREEN_HEIGHT - self.rect.height
 
+    # called on keypress, jumps
     def jump(self):
-        # on a platform
+        # checks if on platform to jump by collision detection
         self.rect.y += 2
         platform_hit_list = pygame.sprite.spritecollide(self, self.level.platformList, False)
         self.rect.y -= 2
-
         if len(platform_hit_list) > 0 or self.rect.bottom >= SCREEN_HEIGHT:
             self.jumpSound.play()
             self.change_y = -10  # larger neg = stronger jump
 
+    # called on keypress, moves player left
     def goLeft(self):
         self.change_x = -6
-
+    # right
     def goRight(self):
         self.change_x = 6
 
+    # called when jump cheat enabled
     def goUp(self):
         self.change_y = -6
-
     def goDown(self):
         self.change_y = 6
 
-    def stop(self): # key up
+    # on key up sets speed to zero
+    def stop(self):
         self.change_x = 0
         self.change_y = 0
 
+# level superclass used for level creation
 class Level(object):    # superclass for level creation
     def __init__(self, player):
+        # lists of level objects
         self.platformList = pygame.sprite.Group()
         self.enemyList = pygame.sprite.Group()
         self.doorList = pygame.sprite.Group()
-        self.player = player
 
+        self.player = player
         self.background = None
 
+        # used for screen scrolling
         self.world_shiftX = 0
         self.world_shiftY = 0
 
         self.startX = None
         self.startY = None
 
+    # moves all sprites
     def update(self):
         self.platformList.update()
         self.enemyList.update()
         self.doorList.update()
 
+    # draws all objects to screen, background shifted for depth of field
     def draw(self, screen):
-        #screen.fill(BLACK)
-        #screen.blit(self.background, [0, 0])
         screen.blit(self.background, (self.world_shiftX // 3, self.world_shiftY // 3))
         self.platformList.draw(screen)
         self.enemyList.draw(screen)
         self.doorList.draw(screen)
 
+    # simulates scrolling horizontally
     def shiftWorldX(self, shift_x):
         self.world_shiftX += shift_x
-
         for door in self.doorList:
             door.rect.x += shift_x
-
         for platform in self.platformList:
             platform.rect.x += shift_x
-
         for enemy in self.enemyList:
             enemy.rect.x += shift_x
 
+    # vertically
     def shiftWorldY(self, shift_y):
         self.world_shiftY += shift_y
 
@@ -182,26 +208,33 @@ class Level(object):    # superclass for level creation
         for enemy in self.enemyList:
             enemy.rect.y += shift_y
 
+# each class is a unique level, calls on Level parent class
+# level setup similar for 01-08
 class Level_01(Level):
     def __init__(self, player):
         Level.__init__(self, player)
 
-        #self.background = pygame.image.load('assets/background_purple.jpg').convert()
+        # load background image
         self.background = pygame.image.load('assets/backgrounds/bluelvl1.png').convert()
         self.background.set_colorkey(BLACK)
 
+        # set invisible map boundaries for death
         self.level_limitX = -100
         self.level_limitY = -300
 
+        # starting position
         self.startX = 125
         self.startY = 125
 
         # [length, height, x, y]
+        # grey platform placement
         level = [[600, 70, 100, 400],
                  ]
+        # White Door placement
         nextLvl = [[40, 60, 650, 340],
                    ]
 
+        # create objects, add to list, pass to Player
         for platform in level:
             block = Platform(platform[0], platform[1])
             block.rect.x = platform[2]
@@ -391,6 +424,7 @@ class Level_06(Level):
         nextLvl = [[40, 60, 1050, 340],
                    ]
 
+        # enemy triangles
         enemies = [[35, 35, 400, 365],
                    [35, 35, 450, 365],
                    [35, 35, 500, 365],
@@ -474,10 +508,10 @@ class Level_07(Level):
                      [35, 35, 830, 700],
                    ]
 
+        # pink death on contact platforms/walls
         deathWall = [[35, 2000, 650, 1085],
                      [35, 450, 760, 3535],
                      [35, 2000, 865, 1085],
-
 
                      [35, 3715, 650, 3085],
                      [35, 2755, 760, 3985],
@@ -512,6 +546,7 @@ class Level_07(Level):
             bady.player = self.player
             self.enemyList.add(bady)
 
+# placeholder level till further development, unbeatable
 class Level_08(Level):
     def __init__(self, player):
         Level.__init__(self, player)
@@ -558,18 +593,24 @@ class Level_08(Level):
             bady.player = self.player
             self.enemyList.add(bady)
 
+# main procedure
 def main():
 
+    # mixer pre initialized in order to fix audio delay on keypress
     pygame.mixer.pre_init(44100, -16, 2, 1024)
+
+    # initializations and declarations
     pygame.init()
     pygame.mixer.init()
 
     size = [SCREEN_WIDTH, SCREEN_HEIGHT]
     screen = pygame.display.set_mode(size)
     pygame.display.set_caption("Quebe")
-
+    icon = pygame.image.load('assets/backgrounds/52favcropped.png')
+    pygame.display.set_icon(icon.convert())
     player = Player()
 
+    # create list of all current levels in order
     level_list = []
     level_list.append(Level_01(player))
     level_list.append(Level_02(player))
@@ -584,36 +625,34 @@ def main():
     current_level = level_list[current_level_num]
 
     active_sprite_list = pygame.sprite.Group()
-    player.level = current_level
 
+    player.level = current_level
     player.rect.x = current_level.startX
-    player.rect.y = current_level.startY    #SCREEN_HEIGHT - player.rect.height
+    player.rect.y = current_level.startY
     active_sprite_list.add(player)
 
+    # background music
     pygame.mixer.music.load('assets/music/jhElegiac.ogg')
     pygame.mixer.music.play(-1, 0.0)
     pygame.mixer.music.set_volume(0.25)
     music = True
 
-    #jumpSound = pygame.mixer.Sound('assets/sounds/SFX_Jump_22.wav')
-
-    #background_img = pygame.image.load('assets/background_blue.jpg').convert()
-
+    # flags
     done = False
     paused = False
-
     grav = True
 
     fpsClock = pygame.time.Clock()
 
+# restarts the current level w/ camera reset
     def restart():
         player.stop()
         current_level.shiftWorldX(-current_level.world_shiftX)
         current_level.shiftWorldY(-current_level.world_shiftY)
-        #player.level = current_level
         player.rect.x = current_level.startX
         player.rect.y = current_level.startY
 
+# creates the menu and displays
     def menu():
         fontObjR = pygame.font.Font("assets/fonts/Raleway-Regular.ttf", 32)
         fontObjL = pygame.font.Font("assets/fonts/Raleway-Light.ttf", 20)
@@ -641,6 +680,7 @@ def main():
 
         pygame.display.update()
 
+# creates in-game help menu and displays
     def help():
         fontObjR = pygame.font.Font("assets/fonts/Raleway-Regular.ttf", 32)
         fontObjL = pygame.font.Font("assets/fonts/Raleway-Light.ttf",20)
@@ -704,20 +744,21 @@ def main():
 
         pygame.display.update()
 
+    # main game loop, terminates on quit command
     while not done:
         for event in pygame.event.get():
             if event.type == QUIT:
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.KEYDOWN:
+                # toggle pause
                 if event.key == pygame.K_ESCAPE:
                     if paused == False:
                         paused = True
                         menu()
                     elif paused == True:
                         paused = False
-                    #pygame.quit()
-                    #sys.exit()
+                # player movements
                 if event.key == pygame.K_LEFT or event.key == pygame.K_a:
                     player.goLeft()
                 if event.key == pygame.K_RIGHT or event.key == pygame.K_d:
@@ -726,19 +767,21 @@ def main():
                     if grav == True:
                         player.jump()
                     else:
-                        player.goUp()
+                        player.goUp()  # when jump cheat is on
                 if event.key == pygame.K_DOWN or event.key == pygame.K_s:
                     if grav == False:
                         player.goDown()
                 # restart level
                 if event.key == pygame.K_r:
                     restart()
+                # when in menu
                 if paused == True:
                     if event.key == pygame.K_q:
                         pygame.quit()
                         sys.exit()
                     if event.key == pygame.K_F1:
                         help()
+                # toggle music
                 if event.key == pygame.K_m:
                     if music == True:
                         pygame.mixer.music.pause()
@@ -746,6 +789,7 @@ def main():
                     else:
                         pygame.mixer.music.unpause()
                         music = True
+                # toggle jump cheat
                 if event.key == pygame.K_j:
                     if grav == True:
                         grav = False
@@ -753,6 +797,7 @@ def main():
                         grav = True
 
             if event.type == pygame.KEYUP:
+                # end player movements
                 if event.key == pygame.K_LEFT and player.change_x < 0:
                     player.stop()
                 if event.key == pygame.K_RIGHT and player.change_x > 0:
@@ -770,7 +815,8 @@ def main():
                         player.level = current_level
                         player.rect.x = current_level.startX
                         player.rect.y = current_level.startY
-
+        # only update if not paused
+        #BUG: jump sound plays while paused
         if paused == False:
             active_sprite_list.update()
             current_level.update()
@@ -786,11 +832,12 @@ def main():
                     player.rect.x = current_level.startX
                     player.rect.y = current_level.startY
 
-            # checks collision from enemies
+            # checks collision from triangle enemies / death walls
             enemy_hit_list = pygame.sprite.spritecollide(player, player.level.enemyList, False)
             for enemy in enemy_hit_list:
                 restart()
 
+            # screen scrolling
             # player near right, shift world left
             if player.rect.right >= 500:
                 diff = player.rect.right - 500
@@ -815,7 +862,7 @@ def main():
                 player.rect.bottom = 500
                 current_level.shiftWorldY(-diff)
 
-            # end of current level boundaries
+            # end of current level boundaries, restart if out of bounds
             current_positionX = player.rect.x + current_level.world_shiftX
             current_positionY = player.rect.y + current_level.world_shiftY
             if current_positionX < current_level.level_limitX:
@@ -823,13 +870,13 @@ def main():
             if current_positionY < current_level.level_limitY:
                 restart()
 
-            # all drawing BELOW
+            # draws to screen surface
             current_level.draw(screen)
             active_sprite_list.draw(screen)
-            # all drawing ABOVE
 
+            # refresh rate limiter
             fpsClock.tick(FPS)
-
+            # flips entire surface to screen
             pygame.display.update()
 
     pygame.quit()
