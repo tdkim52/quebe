@@ -72,14 +72,6 @@ class Player(pygame.sprite.Sprite):
         self.jumpSound = pygame.mixer.Sound('assets/sounds/SFX_Jump_22.wav')
         self.jumpSound.set_volume(0.5)
 
-    # def rotate(image, angle):
-    #     orig_rect = image.get_rect()
-    #     rot_image = pygame.transform.rotate(image, angle)
-    #     rot_rect = orig_rect.copy()
-    #     rot_rect.center = rot_image.get_rect().center
-    #     rot_image = rot_image.subsurface(rot_rect).copy()
-    #     return rot_image
-
     def update(self):   # moves the player
         self.calcGrav()
 
@@ -647,7 +639,6 @@ def main():
         screen.blit(textSurfF1, textRectF1)
         screen.blit(textSurfM, textRectM)
 
-        print(pygame.mixer.music.get_volume())
         pygame.display.update()
 
     def help():
